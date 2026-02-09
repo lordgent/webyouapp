@@ -1,89 +1,127 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { register } from "@/services/auth.service";
 
 export default function Register() {
   const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const [form, setForm] = useState({
+    email: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    router.push("/login");
+    setError(null);
+
+    if (form.password !== form.confirmPassword) {
+      setError("Password dan confirm password tidak sama");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await register({
+        name: form.username,
+        email: form.email,
+        password: form.password,
+      });
+
+      router.push("/login");
+    } catch (err: any) {
+      setError(err.message || "Register gagal");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center  bg-gradient-to-r from-[#09141A] via-[#09141A] to-[#1F4247] ">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-r from-[#09141A] via-[#09141A] to-[#1F4247]">
       <div className="w-full max-w-md rounded-xl p-8 shadow-lg">
-        <h1 className="mb-6  text-2xl font-bold text-white">
+        <h1 className="mb-6 text-2xl font-bold text-white">
           Register
         </h1>
 
         <form onSubmit={handleRegister} className="space-y-4">
-          {/* Email */}
+          {error && (
+            <p className="text-sm text-red-500">{error}</p>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-white">
               Email
             </label>
             <input
+              name="email"
               type="email"
-              placeholder="email@example.com"
               required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              onChange={handleChange}
+              className="mt-1 w-full rounded-lg border border-gray-300 text-white px-4 py-2"
             />
           </div>
 
-          {/* Username */}
           <div>
             <label className="block text-sm font-medium text-white">
               Username
             </label>
             <input
+              name="username"
               type="text"
-              placeholder="username"
               required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              onChange={handleChange}
+              className="mt-1 w-full rounded-lg border border-gray-300 text-white px-4 py-2"
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-white">
               Password
             </label>
             <input
+              name="password"
               type="password"
-              placeholder="********"
               required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              onChange={handleChange}
+              className="mt-1 w-full rounded-lg border border-gray-300 text-white px-4 py-2"
             />
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label className="block text-sm font-medium text-white">
               Confirm Password
             </label>
             <input
+              name="confirmPassword"
               type="password"
-              placeholder="********"
               required
-              className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2
-                         focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              onChange={handleChange}
+              className="mt-1 w-full rounded-lg border text-white border-gray-300 px-4 py-2"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-gradient-to-r from-[#62CDCB] to-[#4599DB] py-2 font-semibold text-white transition hover:bg-blue-700"
+            disabled={loading}
+            className="w-full rounded-lg bg-gradient-to-r from-[#62CDCB] to-[#4599DB] py-2 font-semibold text-white disabled:opacity-50"
           >
-            Register
+            {loading ? "Registering..." : "Register"}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-white">
-        Have an account?{" "}
+          Have an account?{" "}
           <span
             onClick={() => router.push("/login")}
             className="cursor-pointer text-yellow-600 hover:underline"

@@ -1,14 +1,45 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { login } from "@/services/auth.service";
+import { setCookie } from 'cookies-next';
 
-export default function Register() {
+export default function Login() {
   const router = useRouter();
 
-  const handleRegister = (e: React.FormEvent) => {
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Nanti bisa dihubungkan ke API
-    router.push("/login");
+    setError(null);
+
+    try {
+      setLoading(true);
+
+      const res = await login({
+        email: form.email,
+        password: form.password,
+      });
+
+      localStorage.setItem("access_token", res.data.access_token);
+      setCookie('access_token', res.data.access_token, { maxAge: 60 * 60 * 24 });
+      router.push("/user-info");
+    } catch (err: any) {
+      setError(err.message || "Login gagal");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -18,16 +49,21 @@ export default function Register() {
           Login
         </h1>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          {/* Email */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          {error && (
+            <p className="text-sm text-red-500">{error}</p>
+          )}
+
           <div>
             <label className="block text-sm font-medium text-white">
               Email
             </label>
             <input
+              name="email"
               type="email"
               placeholder="email@example.com"
               required
+              onChange={handleChange}
               className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2
                          focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
@@ -39,9 +75,11 @@ export default function Register() {
               Password
             </label>
             <input
+              name="password"
               type="password"
               placeholder="********"
               required
+              onChange={handleChange}
               className="mt-1 w-full rounded-lg border border-gray-300 px-4 py-2
                          focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
@@ -49,9 +87,10 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full rounded-lg bg-gradient-to-r from-[#62CDCB] to-[#4599DB] py-2 font-semibold text-white transition-transform hover:scale-105"
+            disabled={loading}
+            className="w-full rounded-lg bg-gradient-to-r from-[#62CDCB] to-[#4599DB] py-2 font-semibold text-white transition-transform hover:scale-105 disabled:opacity-50"
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
