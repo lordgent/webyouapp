@@ -1,4 +1,22 @@
+import { getCookie } from "cookies-next";
+
+// Pastikan di .env atau Netlify: NEXT_PUBLIC_API_URL=/api-backend
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+/**
+ * Helper untuk mengambil token secara aman.
+ * Di mobile, kita cek Cookie dulu (utama), lalu LocalStorage sebagai cadangan.
+ */
+const getAuthToken = () => {
+  const token = getCookie("access_token");
+  if (token) return token;
+  
+  // Backup jika cookie belum ter-update di sisi client
+  if (typeof window !== "undefined") {
+    return localStorage.getItem("access_token");
+  }
+  return null;
+};
 
 export type UserProfile = {
   _id: string;
@@ -23,16 +41,15 @@ type UserMeResponse = {
 };
 
 export async function getMe(): Promise<UserProfile> {
-  const token = localStorage.getItem("access_token");
+  const token = getAuthToken();
 
-  if (!token) {
-    throw new Error("Token not found");
-  }
+  if (!token) throw new Error("Token not found");
 
   const res = await fetch(`${API_URL}/users/me`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
+      "Cache-Control": "no-cache", // Penting untuk mobile agar tidak caching token lama
     },
   });
 
@@ -45,14 +62,8 @@ export async function getMe(): Promise<UserProfile> {
   return json.data;
 }
 
-export async function updateMe(data: {
-  birthday?: string;
-  height?: number;
-  weight?: number;
-  interests?: string[];
-}): Promise<UserProfile> {
-  const token = localStorage.getItem("access_token");
-
+export async function updateMe(data: Partial<UserProfile>): Promise<UserProfile> {
+  const token = getAuthToken();
   if (!token) throw new Error("Token not found");
 
   const res = await fetch(`${API_URL}/users/me`, {
@@ -64,17 +75,14 @@ export async function updateMe(data: {
     body: JSON.stringify(data),
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to update profile");
-  }
-
   const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to update profile");
+
   return json.data;
 }
 
 export async function getDiscovery(): Promise<UserProfile[]> {
-  const token = localStorage.getItem("access_token");
+  const token = getAuthToken();
   if (!token) throw new Error("Token not found");
 
   const res = await fetch(`${API_URL}/users/discovery`, {
@@ -84,41 +92,27 @@ export async function getDiscovery(): Promise<UserProfile[]> {
     },
   });
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to fetch discovery");
-  }
-
   const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch discovery");
+
   return json.data;
 }
 
 export async function getOtherUserProfile(userId: string): Promise<UserProfile> {
-  if (!userId || userId === "undefined") {
-    console.error("getOtherUserProfile: userId is invalid", userId);
-    throw new Error("Invalid User ID");
-  }
+  if (!userId || userId === "undefined") throw new Error("Invalid User ID");
 
-  const token = localStorage.getItem("access_token");
+  const token = getAuthToken();
   
-  try {
-    const res = await fetch(`${API_URL}/users/${userId}`, {
-      method: "GET",
-      headers: { 
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
-      },
-    });
+  const res = await fetch(`${API_URL}/users/${userId}`, {
+    method: "GET",
+    headers: { 
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+  });
 
-    const json = await res.json();
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.message || "Failed to fetch profile");
 
-    if (!res.ok) {
-      throw new Error(json.message || "Failed to fetch profile");
-    }
-
-    return json.data;
-  } catch (error) {
-    console.error("API Error:", error);
-    throw error;
-  }
+  return json.data;
 }
