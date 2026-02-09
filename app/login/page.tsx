@@ -33,7 +33,12 @@ export default function Login() {
       });
 
       localStorage.setItem("access_token", res.data.access_token);
-      setCookie('access_token', res.data.access_token, { maxAge: 60 * 60 * 24 });
+      setCookie('access_token', res.data.access_token, { 
+        maxAge: 60 * 60 * 24, 
+        path: '/',   
+        secure: true,  
+        sameSite: 'lax', 
+      });
       router.push("/user-info");
     } catch (err: any) {
       setError(err.message || "Login gagal");
