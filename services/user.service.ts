@@ -1,17 +1,11 @@
 import { getCookie } from "cookies-next";
 
-// Pastikan di .env atau Netlify: NEXT_PUBLIC_API_URL=/api-backend
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-/**
- * Helper untuk mengambil token secara aman.
- * Di mobile, kita cek Cookie dulu (utama), lalu LocalStorage sebagai cadangan.
- */
 const getAuthToken = () => {
   const token = getCookie("access_token");
   if (token) return token;
   
-  // Backup jika cookie belum ter-update di sisi client
   if (typeof window !== "undefined") {
     return localStorage.getItem("access_token");
   }

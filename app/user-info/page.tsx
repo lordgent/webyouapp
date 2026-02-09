@@ -7,6 +7,21 @@ import BaseLayout from "@/components/BaseLayout";
 import LoadingScreen from "@/components/LoadingScreen";
 import { deleteCookie } from 'cookies-next';
 
+const initialProfile: UserProfile = {
+  _id: "",
+  name: "",
+  email: "",
+  age: 0,
+  birthday: "",
+  horoscope: "--",
+  zodiac: "--",
+  height: 0,
+  weight: 0,
+  interests: [],
+  gender: "",
+  image: "",
+};
+
 export default function UserInfo() {
   const [editAbout, setEditAbout] = useState(false);
   const [editInterest, setEditInterest] = useState(false);
@@ -14,20 +29,8 @@ export default function UserInfo() {
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [about, setAbout] = useState<any>({
-    birthday: "",
-    age: 0,
-    horoscope: "--",
-    zodiac: "--",
-    height: 0,
-    weight: 0,
-    displayName: "",
-    gender: "",
-    image: "",
-    interests: []
-  });
-
-  const [tempAbout, setTempAbout] = useState(about);
+  const [about, setAbout] = useState<UserProfile>(initialProfile);
+  const [tempAbout, setTempAbout] = useState<UserProfile>(initialProfile);
 
   useEffect(() => {
     fetchProfile();
@@ -35,18 +38,15 @@ export default function UserInfo() {
 
   const fetchProfile = async () => {
     try {
-      const response = await getMe();
-      const res = response as any;
-      const userData = res.data || res;
-      // const userData: any = response.data || response; 
-      const mapped = { 
-        ...userData, 
-        displayName: userData.name || "" 
+      const userData = await getMe();
+      const safeData = {
+        ...userData,
+        interests: userData.interests || []
       };
-      setAbout(mapped);
-      setTempAbout(mapped);
+      setAbout(safeData);
+      setTempAbout(safeData);
     } catch (err) {
-      console.error(err);
+      console.error("Fetch Profile Error:", err);
     } finally {
       setLoading(false);
     }
@@ -76,8 +76,8 @@ export default function UserInfo() {
   const handleSave = async (type: 'about' | 'interest') => {
     setIsSaving(true);
     try {
-      const payload = type === 'about' ? {
-        name: tempAbout.displayName,
+      const payload: Partial<UserProfile> = type === 'about' ? {
+        name: tempAbout.name,
         gender: tempAbout.gender,
         birthday: tempAbout.birthday,
         height: Number(tempAbout.height),
@@ -86,19 +86,17 @@ export default function UserInfo() {
         interests: tempAbout.interests
       };
 
-      const response = await updateMe(payload);
-      // const updatedData: any = response.data || response;
-      const res = response as any;
-      const updatedData = res.data || res;
-      const finalData = { ...updatedData, displayName: updatedData.name };
+      const updatedData = await updateMe(payload);
+      const safeUpdated = { ...updatedData, interests: updatedData.interests || [] };
 
-      setAbout(finalData);
-      setTempAbout(finalData);
+      setAbout(safeUpdated);
+      setTempAbout(safeUpdated);
 
       if (type === 'about') setEditAbout(false);
       if (type === 'interest') setEditInterest(false);
-    } catch (err: any) {
-      alert(err.message || "Failed to update profile");
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : "Failed to update profile";
+      alert(errMsg);
     } finally {
       setIsSaving(false);
     }
@@ -112,11 +110,10 @@ export default function UserInfo() {
 
   if (loading) return <LoadingScreen />;
 
-  // Helper untuk format tanggal dari ISO ke DD / MM / YYYY
   const formatBirthday = (dateStr: string) => {
     if (!dateStr) return "-";
     const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return dateStr; // fallback jika format manual
+    if (isNaN(date.getTime())) return dateStr;
     return `${date.getDate()} / ${date.getMonth() + 1} / ${date.getFullYear()}`;
   };
 
@@ -127,27 +124,23 @@ export default function UserInfo() {
         <button onClick={handleLogout} className="flex items-center cursor-pointer gap-1 text-sm font-medium">
           <LogOutIcon size={24} />
         </button>
-        <p className="flex-1 text-center font-semibold text-sm">@{about.displayName || about.name}</p>
+        <p className="flex-1 text-center font-semibold text-sm">@{about.name || 'User'}</p>
         <div className="w-10"></div>
       </div>
 
       <div className="max-w-md mx-auto px-4 space-y-6">
-        {/* Profile Card Image */}
+        {/* Profile Card */}
         <div className="relative w-full aspect-[4/3] bg-[#162329] rounded-2xl overflow-hidden flex flex-col justify-end p-5 shadow-xl">
           {about.image && <img src={about.image} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="profile" />}
           <div className="relative z-10">
-            <p className="font-bold text-lg">@{about.displayName || about.name}{about.age ? `, ${about.age}` : ''}</p>
+            <p className="font-bold text-lg">@{about.name}{about.age ? `, ${about.age}` : ''}</p>
             <p className="text-xs text-white mb-3">{about.gender || ''}</p>
             <div className="flex gap-2">
               {about.horoscope && about.horoscope !== "--" && (
-                <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-                  <span className="text-xs font-medium">{about.horoscope}</span>
-                </div>
+                <Badge label={about.horoscope} />
               )}
               {about.zodiac && about.zodiac !== "--" && (
-                <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-                  <span className="text-xs font-medium">{about.zodiac}</span>
-                </div>
+                <Badge label={about.zodiac} />
               )}
             </div>
           </div>
@@ -168,9 +161,9 @@ export default function UserInfo() {
 
           {!editAbout ? (
             <div className="space-y-3">
-              {about.displayName || about.birthday ? (
+              {about.name || about.birthday ? (
                 <>
-                  <DataRow label="Display Name" value={about.displayName || about.name} />
+                  <DataRow label="Display Name" value={about.name || '-'} />
                   <DataRow label="Gender" value={about.gender || '-'} />
                   <DataRow label="Birthday" value={formatBirthday(about.birthday)} />
                   <DataRow label="Horoscope" value={about.horoscope || '-'} />
@@ -192,7 +185,7 @@ export default function UserInfo() {
                 <span className="text-xs text-white">Add image</span>
               </div>
               <EditRow label="Display name:">
-                <input className="custom-input" placeholder="Enter name" value={tempAbout.displayName || ""} onChange={e => setTempAbout({ ...tempAbout, displayName: e.target.value })} />
+                <input className="custom-input" placeholder="Enter name" value={tempAbout.name} onChange={e => setTempAbout({ ...tempAbout, name: e.target.value })} />
               </EditRow>
               <EditRow label="Gender:">
                 <select className="custom-input select-icon" value={tempAbout.gender || ""} onChange={e => setTempAbout({ ...tempAbout, gender: e.target.value })}>
@@ -202,13 +195,13 @@ export default function UserInfo() {
                 </select>
               </EditRow>
               <EditRow label="Birthday:">
-                <input type="text" className="custom-input" placeholder="YYYY-MM-DD" value={tempAbout.birthday || ""} onChange={e => setTempAbout({ ...tempAbout, birthday: e.target.value })} />
+                <input type="text" className="custom-input" placeholder="YYYY-MM-DD" value={tempAbout.birthday} onChange={e => setTempAbout({ ...tempAbout, birthday: e.target.value })} />
               </EditRow>
               <EditRow label="Height:">
-                <input type="number" className="custom-input" placeholder="Add height" value={tempAbout.height || ""} onChange={e => setTempAbout({ ...tempAbout, height: e.target.value })} />
+                <input type="number" className="custom-input" placeholder="Add height" value={tempAbout.height || ""} onChange={e => setTempAbout({ ...tempAbout, height: Number(e.target.value) })} />
               </EditRow>
               <EditRow label="Weight:">
-                <input type="number" className="custom-input" placeholder="Add weight" value={tempAbout.weight || ""} onChange={e => setTempAbout({ ...tempAbout, weight: e.target.value })} />
+                <input type="number" className="custom-input" placeholder="Add weight" value={tempAbout.weight || ""} onChange={e => setTempAbout({ ...tempAbout, weight: Number(e.target.value) })} />
               </EditRow>
             </div>
           )}
@@ -229,8 +222,8 @@ export default function UserInfo() {
 
           {!editInterest ? (
             <div className="flex flex-wrap gap-2">
-              {about.interests?.length > 0 ? (
-                about.interests.map((item: string, idx: number) => (
+              {(about.interests && about.interests.length > 0) ? (
+                about.interests.map((item, idx) => (
                   <span key={idx} className="bg-white/5 px-4 py-2 rounded-full text-xs font-medium text-white">{item}</span>
                 ))
               ) : (
@@ -245,9 +238,9 @@ export default function UserInfo() {
                 placeholder="Music, Sport, Tech"
                 value={tempAbout.interests?.join(", ") || ""}
                 onChange={e => {
-                  const value = e.target.value;
-                  const interestsArray = value === "" ? [] : value.split(",").map(i => i.trim()).filter(i => i !== "");
-                  setTempAbout({ ...tempAbout, interests: interestsArray });
+                  const val = e.target.value;
+                  const arr = val === "" ? [] : val.split(",").map(i => i.trim()).filter(i => i !== "");
+                  setTempAbout({ ...tempAbout, interests: arr });
                 }} 
               />
               <p className="text-[10px] text-gray-500 mt-2 ml-1">* Use comma to separate interests</p>
@@ -265,7 +258,14 @@ export default function UserInfo() {
   );
 }
 
-// Komponen Reusable untuk View Mode
+function Badge({ label }: { label: string }) {
+  return (
+    <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+      <span className="text-xs font-medium text-white">{label}</span>
+    </div>
+  );
+}
+
 function DataRow({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="flex text-sm">
@@ -275,7 +275,6 @@ function DataRow({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-// Komponen Reusable untuk Edit Mode
 function EditRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-[120px_1fr] items-center gap-2">
