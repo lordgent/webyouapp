@@ -36,7 +36,6 @@ export default function Login() {
       setCookie('access_token', res.data.access_token, { 
         maxAge: 60 * 60 * 24, 
         path: '/',   
-        secure: true,  
         sameSite: 'lax', 
       });
       router.push("/user-info");
