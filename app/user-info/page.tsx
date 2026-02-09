@@ -36,7 +36,9 @@ export default function UserInfo() {
   const fetchProfile = async () => {
     try {
       const response = await getMe();
-      const userData:any = response.data || response; 
+      const res = response as any;
+      const userData = res.data || res;
+      // const userData: any = response.data || response; 
       const mapped = { 
         ...userData, 
         displayName: userData.name || "" 
@@ -85,7 +87,9 @@ export default function UserInfo() {
       };
 
       const response = await updateMe(payload);
-      const updatedData = response.data || response;
+      // const updatedData: any = response.data || response;
+      const res = response as any;
+      const updatedData = res.data || res;
       const finalData = { ...updatedData, displayName: updatedData.name };
 
       setAbout(finalData);
