@@ -33,10 +33,10 @@ export default function Login() {
       });
 
       localStorage.setItem("access_token", res.data.access_token);
-      setCookie('access_token', res.data.access_token, { 
-        maxAge: 60 * 60 * 24, 
-        path: '/',   
-        sameSite: 'lax', 
+      setCookie('access_token', res.data.access_token, {
+        maxAge: 60 * 60 * 24,
+        path: '/',
+        sameSite: 'lax',
       });
       router.push("/user-info");
     } catch (err: any) {
@@ -65,7 +65,7 @@ export default function Login() {
             <input
               name="email"
               type="email"
-              placeholder="email@example.com"
+              placeholder="Enter your email"
               required
               onChange={handleChange}
               className="mt-1 w-full rounded-lg border text-white border-gray-300 px-4 py-2
@@ -81,7 +81,7 @@ export default function Login() {
             <input
               name="password"
               type="password"
-              placeholder="********"
+              placeholder="Enter your password"
               required
               onChange={handleChange}
               className="mt-1 w-full rounded-lg border text-white border-gray-300 px-4 py-2
@@ -100,12 +100,9 @@ export default function Login() {
 
         <p className="mt-4 text-center text-sm text-white">
           No account?{" "}
-          <span
-            onClick={() => router.push("/register")}
-            className="cursor-pointer text-yellow-600 hover:underline"
-          >
-            Register here
-          </span>
+
+          <a className="cursor-pointer text-yellow-600 hover:underline"
+            href="/register"> Register here</a>
         </p>
       </div>
     </main>

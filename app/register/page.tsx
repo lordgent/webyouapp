@@ -53,7 +53,6 @@ export default function Register() {
         <h1 className="mb-6 text-2xl font-bold text-white">
           Register
         </h1>
-
         <form onSubmit={handleRegister} className="space-y-4">
           {error && (
             <p className="text-sm text-red-500">{error}</p>
@@ -66,9 +65,10 @@ export default function Register() {
             <input
               name="email"
               type="email"
+              placeholder="Enter your email"
               required
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-gray-300 text-white px-4 py-2"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-transparent text-white placeholder-gray-400 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#62CDCB]"
             />
           </div>
 
@@ -79,9 +79,10 @@ export default function Register() {
             <input
               name="username"
               type="text"
+              placeholder="Create a username"
               required
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-gray-300 text-white px-4 py-2"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-transparent text-white placeholder-gray-400 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#62CDCB]"
             />
           </div>
 
@@ -92,9 +93,10 @@ export default function Register() {
             <input
               name="password"
               type="password"
+              placeholder="Create a password"
               required
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border border-gray-300 text-white px-4 py-2"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-transparent text-white placeholder-gray-400 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#62CDCB]"
             />
           </div>
 
@@ -105,16 +107,17 @@ export default function Register() {
             <input
               name="confirmPassword"
               type="password"
+              placeholder="Confirm your password"
               required
               onChange={handleChange}
-              className="mt-1 w-full rounded-lg border text-white border-gray-300 px-4 py-2"
+              className="mt-1 w-full rounded-lg border border-gray-300 bg-transparent text-white placeholder-gray-400 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#62CDCB]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-gradient-to-r from-[#62CDCB] to-[#4599DB] py-2 font-semibold text-white disabled:opacity-50"
+            className="w-full rounded-lg bg-gradient-to-r from-[#62CDCB] to-[#4599DB] py-2 font-semibold text-white disabled:opacity-50 transition-all hover:brightness-110"
           >
             {loading ? "Registering..." : "Register"}
           </button>
@@ -122,12 +125,7 @@ export default function Register() {
 
         <p className="mt-4 text-center text-sm text-white">
           Have an account?{" "}
-          <span
-            onClick={() => router.push("/login")}
-            className="cursor-pointer text-yellow-600 hover:underline"
-          >
-            Login here
-          </span>
+          <a href="/login" className="cursor-pointer text-yellow-600 hover:underline">Login here</a>
         </p>
       </div>
     </main>
