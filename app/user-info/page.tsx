@@ -52,6 +52,7 @@ export default function UserInfo() {
     }
   };
 
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -61,12 +62,36 @@ export default function UserInfo() {
         img.src = reader.result as string;
         img.onload = () => {
           const canvas = document.createElement("canvas");
-          const MAX_WIDTH = 400;
-          canvas.width = MAX_WIDTH;
-          canvas.height = img.height * (MAX_WIDTH / img.width);
+          let width = img.width;
+          let height = img.height;
+
+          const MAX_DIMENSION = 800;
+          if (width > height) {
+            if (width > MAX_DIMENSION) {
+              height *= MAX_DIMENSION / width;
+              width = MAX_DIMENSION;
+            }
+          } else {
+            if (height > MAX_DIMENSION) {
+              width *= MAX_DIMENSION / height;
+              height = MAX_DIMENSION;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
           const ctx = canvas.getContext("2d");
-          ctx?.drawImage(img, 0, 0, canvas.width, canvas.height);
-          setTempAbout({ ...tempAbout, image: canvas.toDataURL("image/jpeg", 0.7) });
+          ctx?.drawImage(img, 0, 0, width, height);
+
+          let quality = 0.9;
+          let base64 = canvas.toDataURL("image/jpeg", quality);
+          
+          while (base64.length > 200000 && quality > 0.1) {
+            quality -= 0.1;
+            base64 = canvas.toDataURL("image/jpeg", quality);
+          }
+
+          setTempAbout({ ...tempAbout, image: base64 });
         };
       };
       reader.readAsDataURL(file);
@@ -82,6 +107,7 @@ export default function UserInfo() {
         birthday: tempAbout.birthday,
         height: Number(tempAbout.height),
         weight: Number(tempAbout.weight),
+        image: tempAbout.image, // Mengirim image base64 hasil resize
       } : {
         interests: tempAbout.interests
       };
@@ -129,24 +155,18 @@ export default function UserInfo() {
       </div>
 
       <div className="max-w-md mx-auto px-4 space-y-6">
-        {/* Profile Card */}
         <div className="relative w-full aspect-[4/3] bg-[#162329] rounded-2xl overflow-hidden flex flex-col justify-end p-5 shadow-xl">
           {about.image && <img src={about.image} className="absolute inset-0 w-full h-full object-cover opacity-60" alt="profile" />}
           <div className="relative z-10">
             <p className="font-bold text-lg">@{about.name}{about.age ? `, ${about.age}` : ''}</p>
             <p className="text-xs text-white mb-3">{about.gender || ''}</p>
             <div className="flex gap-2">
-              {about.horoscope && about.horoscope !== "--" && (
-                <Badge label={about.horoscope} />
-              )}
-              {about.zodiac && about.zodiac !== "--" && (
-                <Badge label={about.zodiac} />
-              )}
+              {about.horoscope && about.horoscope !== "--" && <Badge label={about.horoscope} />}
+              {about.zodiac && about.zodiac !== "--" && <Badge label={about.zodiac} />}
             </div>
           </div>
         </div>
 
-        {/* About Section */}
         <div className="bg-[#0E191F] rounded-2xl p-5">
           <div className="flex justify-between items-center mb-6">
             <h2 className="font-bold text-sm text-white">About</h2>
@@ -207,7 +227,6 @@ export default function UserInfo() {
           )}
         </div>
 
-        {/* Interest Section */}
         <div className="bg-[#0E191F] rounded-2xl p-5">
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-sm text-white">Interest</h2>
